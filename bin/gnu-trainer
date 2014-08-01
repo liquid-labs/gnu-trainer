@@ -67,7 +67,7 @@ function install_emacs() {
 	# and then the myriad 'redhat-release', 'debian_release', etc. But
 	# really more efficient and (almost) as safe just to look for the
 	# package managers.
-	if_which zypper 'sudo zypper -y install emacs' ||
+	if_which zypper 'sudo zypper install -y emacs' ||
 	if_which apt-get 'sudo apt-get -y install emacs' ||
 	if_which yum 'sudo yum -y install emacs' ||
 	if_which urpmi --force --auto emacs ||
