@@ -1,0 +1,79 @@
+#!/bin/bash
+
+function if_which() {
+    local EXECUTABLE="$1"; shift
+    local THEN_COMMAND="$1"; shift
+
+    which "$EXECUTABLE" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+	$THEN_COMMAND
+	return 0 # bash for true
+    else
+	return 1 # bash for false
+    fi
+}
+
+function install_emacs() {
+    local OS=`uname -s`
+
+    if [ x"Darwin" == x"$OS" ]; then
+	# There are basically 3 options for installing on Macs / Darwin:
+	# MacPorts, Fink, and Homebrew. As I understand, MacPorts is more or
+	# less the successor of Fink, which is older, so we just don't bother
+	# with Fink.
+	#
+	# For the other two, we install with whatever is on the machine,
+	# preferring Homebrew because it really seems a 6 in one situation,
+	# but Homebrew does not require sudo.
+	#
+	# If nothing is currently available, then we install Homebrew because
+	# it does not require XCode and is therefore much easier and quicker
+	# to get going.
+	local NO_PKG_MANAGER
+
+	if_which brew 'brew install --cocoa --srgb emacs' ||
+	if_which port 'sudo port install emacs-app' ||
+	NO_PKG_MANAGER=TRUE
+	
+	if [ x"TRUE" == x"$NO_PKG_MANAGER" ]; then
+	    if_which ruby 'ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"' ||
+	    (echo "Could not find ruby, needed to install Homebrew emacs. Bailing out." >&2; exit 2)
+
+	    if_which brew 'brew install --cocoa --srgb emacs' ||
+	    (echo "Could not find nor install package manager. Bailing out." >&2 ; exit 2)
+	 fi
+    elif [ x"Linux" == x"$OS" ]; then		
+	# In or original version, we looked at '/etc/os-release' if available,
+	# and then the myriad 'redhat-release', 'debian_release', etc. But
+	# really more efficient and (almost) as safe just to look for the
+	# package managers.
+	if_which zypper 'sudo zypper -y install emacs' ||
+	if_which apt-get 'sudo apt-get -y install emacs' ||
+	if_which yum 'sudo yum -y install emacs' ||
+	if_which urpmi --force --auto emacs ||
+	(echo "Could not find a supported package manager to install emacs. Bailing out." >&2; exit 2)
+}
+
+if ! if_which emacs 'echo "It appears that emacs is already installed; moving onto configuration."'; then
+    install_emacs
+fi
+
+# Add alias and set 'EDITOR' on Macs.
+# For Homebrew:
+if [ -d /usr/local/Cellar/emacs/24.3/Emacs.app ]; then
+    # Homebrew does create a launch script, but it (IMO) inexplicably forces
+    # the '-nw' option. There's a reason given here, though IMO the reasoning
+    # is bogus:
+    # https://github.com/Homebrew/homebrew/issues/16638
+    # Stuff that depends on '-nw' should set the flag themselves.
+    echo 'export EDITOR=/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
+    echo 'alias emacs=/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
+    source $HOME/.bashrc
+# For MacPorts:
+elif [ -d /Applications/MacPorts/Emacs.app ]; then
+    echo 'export EDITOR=/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
+    echo 'alias emacs=/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
+    source $HOME/.bashrc
+else # Assume it's a linux and just set EDITOR
+    echo 'export EDITOR=emacs' >> $HOME/.bashrc
+fi
