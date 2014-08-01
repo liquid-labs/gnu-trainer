@@ -87,7 +87,7 @@ function check_section() {
     local CHECK="$1"; shift
     local TEXT="$1"; shift
 
-    if ! [ -f "$FILE_PATH" ] || ! grep -Fxq "$CHECK" "$FILE_PATH"; then
+    if ! [ -f "$FILE_PATH" ] || ! grep -q "$CHECK" "$FILE_PATH"; then
 	echo "Appending section '$CHECK' to '$FILE_PATH'."
 	echo "$TEXT" >> $FILE_PATH
 	return 0
