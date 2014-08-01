@@ -58,16 +58,43 @@ if ! if_which emacs 'echo "It appears that emacs is already installed; moving on
     install_emacs
 fi
 
+if ! [ -f "$HOME/.emacs" ] || ! grep -Fxq "; BEGIN : gnu-trainer" "$HOME/.emacs"
+echo <<EOF >> $HOME/.emacs
+; BEGIN : gnu-trainer
+; list the packages you want
+(setq package-list '(web-mode php-mode))
+
+; list the repositories containing them
+(setq package-archives '(("melpa" . "http://melpa.milkbox.net/packages/")
+			 ; ("elpa" . "http://tromey.com/elpa/")
+                         ; ("gnu" . "http://elpa.gnu.org/packages/")
+                         ; ("marmalade" . "http://marmalade-repo.org/packages/")
+			 ))
+
+; activate all the packages (in particular autoloads)
+(package-initialize)
+
+; fetch the list of packages available 
+(unless package-archive-contents
+  (package-refresh-contents))
+
+; install the missing packages
+(dolist (package package-list)
+  (unless (package-installed-p package)
+    (package-install package)))
+; END : gnu-trainer
+EOF
+
 # Add alias and set 'EDITOR' on Macs.
 # For Homebrew:
-if [ -d /usr/local/Cellar/emacs/24.3/Emacs.app ]; then
+if [ -d /usr/local/opt/emacs/Emacs.app ]; then
     # Homebrew does create a launch script, but it (IMO) inexplicably forces
     # the '-nw' option. There's a reason given here, though IMO the reasoning
     # is bogus:
     # https://github.com/Homebrew/homebrew/issues/16638
     # Stuff that depends on '-nw' should set the flag themselves.
     echo 'export EDITOR=/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
-    echo 'alias emacs=/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
+    echo "alias emacs='/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs'" >> $HOME/.bashrc
     source $HOME/.bashrc
 # For MacPorts:
 elif [ -d /Applications/MacPorts/Emacs.app ]; then
@@ -77,3 +104,5 @@ elif [ -d /Applications/MacPorts/Emacs.app ]; then
 else # Assume it's a linux and just set EDITOR
     echo 'export EDITOR=emacs' >> $HOME/.bashrc
 fi
+
+# Do something to fix Mac's bashrc not getting read
