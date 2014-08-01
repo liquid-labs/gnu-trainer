@@ -15,7 +15,7 @@ function if_which() {
 
     which "$EXECUTABLE" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-	$THEN_COMMAND
+	eval $THEN_COMMAND
 	return 0 # bash for true
     else
 	return 1 # bash for false
@@ -72,6 +72,7 @@ function install_emacs() {
 	if_which yum 'sudo yum -y install emacs' ||
 	if_which urpmi --force --auto emacs ||
 	(echo "Could not find a supported package manager to install emacs. Bailing out." >&2; exit 2)
+    fi
 }
 
 # /**
@@ -87,7 +88,10 @@ function check_section() {
     local TEXT="$1"; shift
 
     if ! [ -f "$FILE_PATH" ] || ! grep -Fxq "$CHECK" "$FILE_PATH"; then
+	echo "Appending section '$CHECK' to '$FILE_PATH'."
 	echo "$TEXT" >> $FILE_PATH
+    else
+	echo "It appears '$FILE_PATH' already contains section '$CHECK'."
     fi
 }
 
@@ -143,17 +147,18 @@ export EDITOR='/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs'
 alias emacs='/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs'
 # END : gnu-trainer
 EOF
-)
+    )
 else # Assume it's a well behaved linux and just set EDITOR
     BASHRC_CONFIG=$(cat <<EOF
 # BEGIN : gnu-trainer
 export EDITOR='emacs'
 # END : gnu-trainer
 EOF
+    )
 fi
 
 check_section "$HOME/.emacs" "; BEGIN : gnu-trainer" "$EMACS_CONFIG"
-check_section "$HOME/.bashrc" "# BEGIN : gnu-trainer" "$EMACS_CONFIG"
+check_section "$HOME/.bashrc" "# BEGIN : gnu-trainer" "$BASHRC_CONFIG"
 
 # There's a problem with the Mac implementation wrt '.bashrc'. Namely, it more
 # or less ignores it and always uses '.bash_profile'. An linux boxes, it may
@@ -166,4 +171,6 @@ if [ x"Darwin" == x`uname -s` ]; then
 if [ -f $HOME/.bashrc ]; then source $HOME/.bashrc; fi
 # END : gnu-trainer
 EOF
+    )
     check_section "$HOME/.bash_profile" "source .\.bashrc" "$BASH_PROFILE_CONFIG"
+fi
