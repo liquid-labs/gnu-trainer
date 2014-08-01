@@ -90,8 +90,10 @@ function check_section() {
     if ! [ -f "$FILE_PATH" ] || ! grep -Fxq "$CHECK" "$FILE_PATH"; then
 	echo "Appending section '$CHECK' to '$FILE_PATH'."
 	echo "$TEXT" >> $FILE_PATH
+	return 0
     else
 	echo "It appears '$FILE_PATH' already contains section '$CHECK'."
+	return 1
     fi
 }
 
@@ -158,7 +160,9 @@ EOF
 fi
 
 check_section "$HOME/.emacs" "; BEGIN : gnu-trainer" "$EMACS_CONFIG"
-check_section "$HOME/.bashrc" "# BEGIN : gnu-trainer" "$BASHRC_CONFIG"
+if check_section "$HOME/.bashrc" "# BEGIN : gnu-trainer" "$BASHRC_CONFIG"; then
+    echo "You will need to login to a new shell for the '.bashrc' changes to take effect."
+fi
 
 # There's a problem with the Mac implementation wrt '.bashrc'. Namely, it more
 # or less ignores it and always uses '.bash_profile'. An linux boxes, it may
@@ -172,5 +176,7 @@ if [ -f $HOME/.bashrc ]; then source $HOME/.bashrc; fi
 # END : gnu-trainer
 EOF
     )
-    check_section "$HOME/.bash_profile" "source .\.bashrc" "$BASH_PROFILE_CONFIG"
+    if check_section "$HOME/.bash_profile" "source .\.bashrc" "$BASH_PROFILE_CONFIG"; then
+        echo "You will need to login to a new shell for the '.bash_profile' changes to take effect."
+    fi
 fi
