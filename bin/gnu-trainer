@@ -176,7 +176,7 @@ if [ -f $HOME/.bashrc ]; then source $HOME/.bashrc; fi
 # END : gnu-trainer
 EOF
     )
-    if check_section "$HOME/.bash_profile" "source .\.bashrc" "$BASH_PROFILE_CONFIG"; then
+    if check_section "$HOME/.bash_profile" "source .*\.bashrc" "$BASH_PROFILE_CONFIG"; then
         echo "You will need to login to a new shell for the '.bash_profile' changes to take effect."
     fi
 fi
