@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# /**
+# * <div class="subHedaer">Helper Functions</div>
+# * <div class="p">
+# *   <code>if_which(exec, command)</code> : Takes two arguments, the name of an
+# *   executable to test with <code>which</code> and a command (as a string)
+# *   to be executed if the 'which' finds the named executable. The executable
+# *   is ostensibly used in the command.
+# * </div>
+# */
 function if_which() {
     local EXECUTABLE="$1"; shift
     local THEN_COMMAND="$1"; shift
@@ -13,6 +22,17 @@ function if_which() {
     fi
 }
 
+# /**
+# * <div class="p">
+# *   <code>install_emacs()</code> : Attempts to find a host package manager and
+# *   install emacs. In the case of a Mac, it will attempt to install the <a
+# *   href="http://brew.sh/">Homebrew</a> package manager if no known package
+# *   manager is found. Currently supports Homebrew and <a
+# *   href="https://www.macports.org/">MacPorts</a> on Darwin and
+# *   <code>zypper</code>, <code>apt-get</code>, <code>yum</code>, and
+# *   <code>urpmi</code> (preferred in those orders).
+# * </div>
+# */
 function install_emacs() {
     local OS=`uname -s`
 
@@ -54,12 +74,28 @@ function install_emacs() {
 	(echo "Could not find a supported package manager to install emacs. Bailing out." >&2; exit 2)
 }
 
+# /**
+# * <div class="p">
+# *   <code>check_section(file_path, check, text)</code> : Checks whether the
+# *   <code>check</code> string can be found in <code>file_path</code>
+# *   contents, and if not, then appends <code>text</code> to the file.
+# * </div>
+# */
+function check_section() {
+    local FILE_PATH="$1"; shift
+    local CHECK="$1"; shift
+    local TEXT="$1"; shift
+
+    if ! [ -f "$FILE_PATH" ] || ! grep -Fxq "$CHECK" "$FILE_PATH"; then
+	echo "$TEXT" >> $FILE_PATH
+    fi
+}
+
 if ! if_which emacs 'echo "It appears that emacs is already installed; moving onto configuration."'; then
     install_emacs
 fi
 
-if ! [ -f "$HOME/.emacs" ] || ! grep -Fxq "; BEGIN : gnu-trainer" "$HOME/.emacs"
-echo <<EOF >> $HOME/.emacs
+EMACS_CONFIG=$(cat <<EOF
 ; BEGIN : gnu-trainer
 ; list the packages you want
 (setq package-list '(web-mode php-mode))
@@ -84,25 +120,50 @@ echo <<EOF >> $HOME/.emacs
     (package-install package)))
 ; END : gnu-trainer
 EOF
+)
 
 # Add alias and set 'EDITOR' on Macs.
-# For Homebrew:
-if [ -d /usr/local/opt/emacs/Emacs.app ]; then
+if [ -d /usr/local/opt/emacs/Emacs.app ]; then # Hombrew
     # Homebrew does create a launch script, but it (IMO) inexplicably forces
     # the '-nw' option. There's a reason given here, though IMO the reasoning
     # is bogus:
     # https://github.com/Homebrew/homebrew/issues/16638
     # Stuff that depends on '-nw' should set the flag themselves.
-    echo 'export EDITOR=/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
-    echo "alias emacs='/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs'" >> $HOME/.bashrc
-    source $HOME/.bashrc
-# For MacPorts:
+    BASHRC_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+export EDITOR='/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs'
+alias emacs='/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs'
+# END : gnu-trainer
+EOF
+    )
 elif [ -d /Applications/MacPorts/Emacs.app ]; then
-    echo 'export EDITOR=/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
-    echo 'alias emacs=/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs' >> $HOME/.bashrc
-    source $HOME/.bashrc
-else # Assume it's a linux and just set EDITOR
-    echo 'export EDITOR=emacs' >> $HOME/.bashrc
+    BASHRC_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+export EDITOR='/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs'
+alias emacs='/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs'
+# END : gnu-trainer
+EOF
+)
+else # Assume it's a well behaved linux and just set EDITOR
+    BASHRC_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+export EDITOR='emacs'
+# END : gnu-trainer
+EOF
 fi
 
-# Do something to fix Mac's bashrc not getting read
+check_section "$HOME/.emacs" "; BEGIN : gnu-trainer" "$EMACS_CONFIG"
+check_section "$HOME/.bashrc" "# BEGIN : gnu-trainer" "$EMACS_CONFIG"
+
+# There's a problem with the Mac implementation wrt '.bashrc'. Namely, it more
+# or less ignores it and always uses '.bash_profile'. An linux boxes, it may
+# not be guaranteed that '.bashrc' gets slurped in, but it seems to be
+# usually. Actually, I'm not really sure, but in my testing, it seems OK and
+# I'm sticking to maxim of "do the least necessary".
+if [ x"Darwin" == x`uname -s` ]; then
+    BASH_PROFILE_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+if [ -f $HOME/.bashrc ]; then source $HOME/.bashrc; fi
+# END : gnu-trainer
+EOF
+    check_section "$HOME/.bash_profile" "source .\.bashrc" "$BASH_PROFILE_CONFIG"
