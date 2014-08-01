@@ -1,0 +1,169 @@
+#!/bin/bash
+
+# /**
+# * <div class="subHedaer">Helper Functions</div>
+# * <div class="p">
+# *   <code>if_which(exec, command)</code> : Takes two arguments, the name of an
+# *   executable to test with <code>which</code> and a command (as a string)
+# *   to be executed if the 'which' finds the named executable. The executable
+# *   is ostensibly used in the command.
+# * </div>
+# */
+function if_which() {
+    local EXECUTABLE="$1"; shift
+    local THEN_COMMAND="$1"; shift
+
+    which "$EXECUTABLE" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+	$THEN_COMMAND
+	return 0 # bash for true
+    else
+	return 1 # bash for false
+    fi
+}
+
+# /**
+# * <div class="p">
+# *   <code>install_emacs()</code> : Attempts to find a host package manager and
+# *   install emacs. In the case of a Mac, it will attempt to install the <a
+# *   href="http://brew.sh/">Homebrew</a> package manager if no known package
+# *   manager is found. Currently supports Homebrew and <a
+# *   href="https://www.macports.org/">MacPorts</a> on Darwin and
+# *   <code>zypper</code>, <code>apt-get</code>, <code>yum</code>, and
+# *   <code>urpmi</code> (preferred in those orders).
+# * </div>
+# */
+function install_emacs() {
+    local OS=`uname -s`
+
+    if [ x"Darwin" == x"$OS" ]; then
+	# There are basically 3 options for installing on Macs / Darwin:
+	# MacPorts, Fink, and Homebrew. As I understand, MacPorts is more or
+	# less the successor of Fink, which is older, so we just don't bother
+	# with Fink.
+	#
+	# For the other two, we install with whatever is on the machine,
+	# preferring Homebrew because it really seems a 6 in one situation,
+	# but Homebrew does not require sudo.
+	#
+	# If nothing is currently available, then we install Homebrew because
+	# it does not require XCode and is therefore much easier and quicker
+	# to get going.
+	local NO_PKG_MANAGER
+
+	if_which brew 'brew install --cocoa --srgb emacs' ||
+	if_which port 'sudo port install emacs-app' ||
+	NO_PKG_MANAGER=TRUE
+	
+	if [ x"TRUE" == x"$NO_PKG_MANAGER" ]; then
+	    if_which ruby 'ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"' ||
+	    (echo "Could not find ruby, needed to install Homebrew emacs. Bailing out." >&2; exit 2)
+
+	    if_which brew 'brew install --cocoa --srgb emacs' ||
+	    (echo "Could not find nor install package manager. Bailing out." >&2 ; exit 2)
+	 fi
+    elif [ x"Linux" == x"$OS" ]; then		
+	# In or original version, we looked at '/etc/os-release' if available,
+	# and then the myriad 'redhat-release', 'debian_release', etc. But
+	# really more efficient and (almost) as safe just to look for the
+	# package managers.
+	if_which zypper 'sudo zypper -y install emacs' ||
+	if_which apt-get 'sudo apt-get -y install emacs' ||
+	if_which yum 'sudo yum -y install emacs' ||
+	if_which urpmi --force --auto emacs ||
+	(echo "Could not find a supported package manager to install emacs. Bailing out." >&2; exit 2)
+}
+
+# /**
+# * <div class="p">
+# *   <code>check_section(file_path, check, text)</code> : Checks whether the
+# *   <code>check</code> string can be found in <code>file_path</code>
+# *   contents, and if not, then appends <code>text</code> to the file.
+# * </div>
+# */
+function check_section() {
+    local FILE_PATH="$1"; shift
+    local CHECK="$1"; shift
+    local TEXT="$1"; shift
+
+    if ! [ -f "$FILE_PATH" ] || ! grep -Fxq "$CHECK" "$FILE_PATH"; then
+	echo "$TEXT" >> $FILE_PATH
+    fi
+}
+
+if ! if_which emacs 'echo "It appears that emacs is already installed; moving onto configuration."'; then
+    install_emacs
+fi
+
+EMACS_CONFIG=$(cat <<EOF
+; BEGIN : gnu-trainer
+; list the packages you want
+(setq package-list '(web-mode php-mode))
+
+; list the repositories containing them
+(setq package-archives '(("melpa" . "http://melpa.milkbox.net/packages/")
+			 ; ("elpa" . "http://tromey.com/elpa/")
+                         ; ("gnu" . "http://elpa.gnu.org/packages/")
+                         ; ("marmalade" . "http://marmalade-repo.org/packages/")
+			 ))
+
+; activate all the packages (in particular autoloads)
+(package-initialize)
+
+; fetch the list of packages available 
+(unless package-archive-contents
+  (package-refresh-contents))
+
+; install the missing packages
+(dolist (package package-list)
+  (unless (package-installed-p package)
+    (package-install package)))
+; END : gnu-trainer
+EOF
+)
+
+# Add alias and set 'EDITOR' on Macs.
+if [ -d /usr/local/opt/emacs/Emacs.app ]; then # Hombrew
+    # Homebrew does create a launch script, but it (IMO) inexplicably forces
+    # the '-nw' option. There's a reason given here, though IMO the reasoning
+    # is bogus:
+    # https://github.com/Homebrew/homebrew/issues/16638
+    # Stuff that depends on '-nw' should set the flag themselves.
+    BASHRC_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+export EDITOR='/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs'
+alias emacs='/usr/local/opt/emacs/Emacs.app/Contents/MacOS/Emacs'
+# END : gnu-trainer
+EOF
+    )
+elif [ -d /Applications/MacPorts/Emacs.app ]; then
+    BASHRC_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+export EDITOR='/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs'
+alias emacs='/Applications/MacPorts/Emacs.app/Contents/MacOS/Emacs'
+# END : gnu-trainer
+EOF
+)
+else # Assume it's a well behaved linux and just set EDITOR
+    BASHRC_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+export EDITOR='emacs'
+# END : gnu-trainer
+EOF
+fi
+
+check_section "$HOME/.emacs" "; BEGIN : gnu-trainer" "$EMACS_CONFIG"
+check_section "$HOME/.bashrc" "# BEGIN : gnu-trainer" "$EMACS_CONFIG"
+
+# There's a problem with the Mac implementation wrt '.bashrc'. Namely, it more
+# or less ignores it and always uses '.bash_profile'. An linux boxes, it may
+# not be guaranteed that '.bashrc' gets slurped in, but it seems to be
+# usually. Actually, I'm not really sure, but in my testing, it seems OK and
+# I'm sticking to maxim of "do the least necessary".
+if [ x"Darwin" == x`uname -s` ]; then
+    BASH_PROFILE_CONFIG=$(cat <<EOF
+# BEGIN : gnu-trainer
+if [ -f $HOME/.bashrc ]; then source $HOME/.bashrc; fi
+# END : gnu-trainer
+EOF
+    check_section "$HOME/.bash_profile" "source .\.bashrc" "$BASH_PROFILE_CONFIG"
