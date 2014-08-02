@@ -101,8 +101,28 @@ if ! if_which emacs 'echo "It appears that emacs is already installed; moving on
     install_emacs
 fi
 
+MAJOR_VERSION=`emacs --version | grep -e 'Emacs [0-9]' | awk '{print $3}' | awk -F'.' '{print $1}'`
+
+EMACS_23_SETUP=""
+if [ x"$MAJOR_VERSION" == x"23" ]; then
+    if [ ! -f "$HOME/.emacs.d/lisp/package.el" ]; then
+	mkdir -p "$HOME/.emacs.d/lisp"
+	curl -s http://repo.or.cz/w/emacs.git/blob_plain/1a0a666f941c99882093d7bd08ced15033bc3f0c:/lisp/emacs-lisp/package.el > $HOME/.emacs.d/lisp/package.el
+    fi
+    EMACS_23_SETUP=$(cat <<EOF
+; Add 'package' support to emacs 23
+(add-to-list 'load-path "~/.emacs.d/lisp/")
+(if (= 23 emacs-major-version)
+  (require 'package))
+EOF
+)
+elif [ x"$MAJOR_VERSION" != x"24" ]; then
+    echo "WARNING: Could not determine major version. Package support may be impaired." >&2
+fi
+
 EMACS_CONFIG=$(cat <<EOF
 ; BEGIN : gnu-trainer
+$EMACS_23_SETUP
 ; list the packages you want
 (setq package-list '(web-mode php-mode))
 
@@ -121,7 +141,7 @@ EMACS_CONFIG=$(cat <<EOF
   (package-refresh-contents))
 
 ; install the missing packages
-(dolist (package package-list)
+em(dolist (package package-list)
   (unless (package-installed-p package)
     (package-install package)))
 ; END : gnu-trainer
