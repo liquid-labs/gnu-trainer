@@ -9,6 +9,14 @@ To use you can download and run the [install file](https://raw.githubusercontent
 bash <(curl -s https://raw.githubusercontent.com/Liquid-Labs/gnu-trainer/master/bin/gnu-trainer)
 ```
 
+This will download and run the script on any [supported environment](#Tested Environments) (generally Linux and OS X). The script will:
+
+1) try and figure out if it can install emacs,
+2) if so, install emacs,
+3) output package and configuration information.
+
+Supports emacs 23 and 24.
+
 To Customize
 ------------
 
@@ -21,8 +29,9 @@ Tested Environments
 |:-----|:----|----:|
 |OpenSUSE 12.3|Zane Rockenbaugh|2014-08-01|
 |OpenSUSE 13.1|Zane Rockenbaugh|2014-08-01|
-|Amazon Linux 2012.09|Zane Rockenbaugh|2014-08-01|
+|Amazon Linux 2012.09(*)|Zane Rockenbaugh|2014-08-01|
 |OS X 10.9.4|Zane Rockenbaugh|2014-08-01|
 |OS X 10.9.4 with Homebrew|Zane Rockenbaugh|2014-08-01|
 |OS X 10.9.4 with MacPorts|Zane Rockenbaugh|2014-08-01|
 
+(*) : Installs emacs 23 with standard sources.
