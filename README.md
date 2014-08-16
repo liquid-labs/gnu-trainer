@@ -11,16 +11,25 @@ bash <(curl -s https://raw.githubusercontent.com/Liquid-Labs/gnu-trainer/master/
 
 This will download and run the script on any [supported environment](#tested-environments) (generally Linux and OS X). The script will:
 
-1. try and figure out if it can install emacs,
-2. if so, install emacs,
-3. output package and configuration information.
+1. check if emacs already installed,
+2. install a package manager as necessary (only on OS X),
+3. install emacs if necessary and possible,
+4. and configure installed emacs (support for 23 and 24+).
 
-Supports emacs 23 and 24.
+Supports emacs 23 and 24. As written, customizes by installing: 
+
+* `web-mode` and
+* `php-mode` packages.
 
 To Customize
 ------------
 
-The current configuration used is rather simple and could use some fleshing out; feel free to suggest changes. If you want to go your own way, easy enough to fork. I considered adding a parameter to the setup script to allow it to point to alternate sources, but then figured better to keep it simple and just use git. Please do isolate and submit any general improvements to the [Liquid-Labs/gnu-trainer](https://github.com/Liquid-Labs/gnu-trainer) project.
+The current configuration used is rather simple and could use some fleshing out; feel free to suggest changes. The target for this configuration is general purpose web development; front, back, and everything in between.
+
+If you want to go your own way, easy enough to fork. Please do isolate and submit any general improvements to the [Liquid-Labs/gnu-trainer](https://github.com/Liquid-Labs/gnu-trainer) project.
+
+I considered writing the script to download the configuration in a separate step, and then allowing the source to be set on the command line. Personally, I like the idea of keeping it simple and the complication doesn't seem justified at this point.
+
 
 Tested Environments
 -------------------
