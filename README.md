@@ -9,7 +9,7 @@ To use you can download and run the [install file](https://raw.githubusercontent
 bash <(curl -s https://raw.githubusercontent.com/Liquid-Labs/gnu-trainer/master/bin/gnu-trainer)
 ```
 
-This will download and run the script on any [supported environment](#Tested Environments) (generally Linux and OS X). The script will:
+This will download and run the script on any [supported environment](#tested-environments) (generally Linux and OS X). The script will:
 
 1) try and figure out if it can install emacs,
 2) if so, install emacs,
