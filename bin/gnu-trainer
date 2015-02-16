@@ -141,7 +141,7 @@ $EMACS_23_SETUP
   (package-refresh-contents))
 
 ; install the missing packages
-em(dolist (package package-list)
+(dolist (package package-list)
   (unless (package-installed-p package)
     (package-install package)))
 ; END : gnu-trainer
