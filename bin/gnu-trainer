@@ -124,7 +124,7 @@ EMACS_CONFIG=$(cat <<EOF
 ; BEGIN : gnu-trainer
 $EMACS_23_SETUP
 ; list the packages you want
-(setq package-list '(web-mode php-mode))
+(setq package-list '(web-mode php-mode nix-mode))
 
 ; list the repositories containing them
 (setq package-archives '(("melpa" . "http://melpa.milkbox.net/packages/")
