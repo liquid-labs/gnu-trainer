@@ -144,6 +144,10 @@ $EMACS_23_SETUP
 (dolist (package package-list)
   (unless (package-installed-p package)
     (package-install package)))
+
+; always use spaces
+(setq-default indent-tabs-mode nil)
+
 ; END : gnu-trainer
 EOF
 )
