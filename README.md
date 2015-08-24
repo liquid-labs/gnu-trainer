@@ -38,6 +38,7 @@ Tested Environments
 
 |Environment|By|On|
 |:-----|:----|----:|
+|Ubuntu 14.04/trusty|Zane Rockenbaugh|2015-08-24|
 |OpenSUSE 12.3|Zane Rockenbaugh|2014-08-01|
 |OpenSUSE 13.1|Zane Rockenbaugh|2014-08-01|
 |Amazon Linux 2012.09(*)|Zane Rockenbaugh|2014-08-01|
