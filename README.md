@@ -18,7 +18,8 @@ This will download and run the script on any [supported environment](#tested-env
 
 Supports emacs 23 and 24. As written, customizes by installing: 
 
-* `web-mode` and
+* `web-mode`,
+* `nix-mode`, and
 * `php-mode` packages.
 
 Note the first time you launch emacs there will probably be a small delay as it downloads the packages. Subsequent starts will then be normal speed.
